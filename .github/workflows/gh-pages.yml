@@ -1,0 +1,42 @@
+name: Deploy Github Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-to-gh-pages:
+    if: "contains(github.event.head_commit.message, '[deploy]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: "casdoor/casdoor"
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Sed Config Base
+        shell: bash
+        run: |
+          sed -i 's/\/xxxcasdoor/\/casdoor\/casdoor/g' web/src/Setting.js
+
+      - name: Build Web
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+        run: |
+          cd web
+          yarn install
+          yarn build
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUBBOTTOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./web/dist
